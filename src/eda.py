@@ -4,9 +4,12 @@ import shutil
 from tqdm.auto import tqdm
 from zipfile import ZipFile
 import pickle
+import datetime
+import statistics as st
 
 import pandas as pd
-import matplotlib.pyplot as plt
+
+import plotly.express as px
 
 
 class Gatherer:
@@ -61,28 +64,86 @@ class Selector:
         return df
 
     @staticmethod
-    def serialize(df: pd.DataFrame, serial_path: str):
+    def serialize(data: dict, serial_path: str):
         with open(serial_path, "wb") as f:
-            pickle.dump(df, f)
+            pickle.dump(data, f)
 
 
 class Cleaner:
     def __init__(self, serial_path: str):
         with open(serial_path, "rb") as f:
-            self.df: pd.DataFrame = pickle.load(f)
+            self.data: dict = pickle.load(f)
 
-    def duplicated(self, subset: list):
-        return self.df[self.df.duplicated(subset=subset)]
+    def duplicated(self, key: str, subset: list):
+        df = self.data[key]
+        return df[df.duplicated(subset=subset)]
 
-    def drop_duplicates(self, subset: list):
-        self.df = self.df.drop_duplicates(subset=subset).reset_index(drop=True)
+    def drop_duplicates(self, key: str, subset: list):
+        self.data[key] = self.data[key].drop_duplicates(subset=subset).reset_index(drop=True)
 
-    def fillna(self, column: str, value: str):
-        column_type: type = self.df[column].dtypes
+    def fillna(self, key: str, column: str, value: str):
+        column_type: type = self.data[key][column].dtypes
 
         value = column_type(value)
 
-        self.df = self.df[column].fillna(value=value)
+        self.data[key] = self.data[key][column].fillna(value=value)
 
-    def drop_na(self, subset: list):
-        self.df = self.df.dropna(subset=subset).reset_index(drop=True)
+    def drop_na(self, key: str, subset: list):
+        self.data[key] = self.data[key].dropna(subset=subset).reset_index(drop=True)
+
+    def to_datetime(self, key: str, column: str):
+        self.data[key][column] = self.data[key][column].apply(pd.to_datetime)
+
+    @staticmethod
+    def serialize(data: dict, serial_path: str):
+        with open(serial_path, "wb") as f:
+            pickle.dump(data, f)
+
+
+class Explorer:
+    def __init__(self, serial_path: str):
+        with open(serial_path, "rb") as f:
+            self.data: dict = pickle.load(f)
+
+    @staticmethod
+    def line(data: pd.DataFrame, x: str, y: str, title: str, tickangle: int = 0, mode: str = "markers+lines"):
+        fig = px.line(data, x=x, y=y, title=title)
+        fig.update_xaxes(tickangle=tickangle)
+        fig.update_traces(mode=mode)
+        return fig
+
+    @staticmethod
+    def bar(data: pd.DataFrame, x: str, y: str, title: str, tickangle: int = 0, mode: str = "markers+lines", color: str = None):
+        fig = px.bar(data, x=x, y=y, title=title, color=None)
+        fig.update_xaxes(tickangle=tickangle)
+        return fig
+
+    @staticmethod
+    def box(data: pd.Series, y: str):
+        fig = px.box(data, y=y)
+        return fig
+
+
+class OutlierDetector:
+    def __init__(self, data: list):
+        self.data = data
+        self.q1, self.q2, self.q3 = st.quantiles(data)
+        self.a = self.q3 - self.q1
+        self.extreme = []
+        self.moderate = []
+        self.regular = []
+
+        for d in self.data:
+            self.check_outlier(d)
+
+    def check_outlier(self, value: float) -> str:
+        if value < (self.q1 - 3 * self.a) or value > (self.q3 + 3 * self.a):
+            self.extreme.append(value)
+            self.moderate.append(value)
+        elif value < (self.q1 - 1.5 * self.a) or value > (self.q3 + 1.5 * self.a):
+            self.moderate.append(value)
+        else:
+            self.regular.append(value)
+
+    def __str__(self):
+        return f"Extreme:\t{len(self.extreme)}\nModerate:\t{len(self.moderate)}\nRegular:\t{len(self.regular)}"
