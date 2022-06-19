@@ -1,7 +1,6 @@
 # Project directories
 .idea/
 data/
-results/
 .vscode/
 
 # Byte-compiled / optimized / DLL files
