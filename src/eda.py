@@ -12,6 +12,7 @@ import pandas as pd
 import plotly.express as px
 
 
+
 class Gatherer:
     def __init__(self, urls: list):
         self.urls: list = urls
@@ -106,22 +107,9 @@ class Explorer:
             self.data: dict = pickle.load(f)
 
     @staticmethod
-    def line(data: pd.DataFrame, x: str, y: str, title: str, tickangle: int = 0, mode: str = "markers+lines"):
-        fig = px.line(data, x=x, y=y, title=title)
-        fig.update_xaxes(tickangle=tickangle)
-        fig.update_traces(mode=mode)
-        return fig
-
-    @staticmethod
-    def bar(data: pd.DataFrame, x: str, y: str, title: str, tickangle: int = 0, mode: str = "markers+lines", color: str = None):
-        fig = px.bar(data, x=x, y=y, title=title, color=None)
-        fig.update_xaxes(tickangle=tickangle)
-        return fig
-
-    @staticmethod
-    def box(data: pd.Series, y: str):
-        fig = px.box(data, y=y)
-        return fig
+    def serialize(data: dict, serial_path: str):
+        with open(serial_path, "wb") as f:
+            pickle.dump(data, f)
 
 
 class OutlierDetector:
