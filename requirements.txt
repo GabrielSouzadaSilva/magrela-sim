@@ -76,7 +76,6 @@ qtconsole
 QtPy
 requests==2.28.0
 Send2Trash
-sip==4.19.13
 six
 sniffio==1.2.0
 soupsieve

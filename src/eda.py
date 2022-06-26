@@ -6,7 +6,7 @@ from zipfile import ZipFile
 import pickle
 import datetime
 import statistics as st
-
+import numpy as np
 import pandas as pd
 
 import plotly.express as px
@@ -28,7 +28,7 @@ class Gatherer:
                 filename = url.split('/')[-1]
                 with tqdm.wrapattr(r.raw, "read", total=total_length, desc=f"Downloading \"{filename}\"") as raw:
                     # save the output to a file
-                    with open(f"{download_path}/{filename}", 'wb') as output:
+                    with open(rf"{download_path}/{filename}", 'wb') as output:
                         shutil.copyfileobj(raw, output)
 
     def extract(self, download_path: str, extract_path: str):
@@ -115,7 +115,10 @@ class Explorer:
 class OutlierDetector:
     def __init__(self, data: list):
         self.data = data
-        self.q1, self.q2, self.q3 = st.quantiles(data)
+        self.q1 = np.percentile(data, 25)
+        self.q2 = np.percentile(data, 50)
+        self.q3 = np.percentile(data, 75)
+        #self.q1, self.q2, self.q3 = st.quantiles(data)
         self.a = self.q3 - self.q1
         self.extreme = []
         self.moderate = []
