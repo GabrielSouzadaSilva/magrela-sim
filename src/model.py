@@ -1,5 +1,4 @@
 import simpy
-import simpy.rt
 import random, time
 
 random.seed(time.time())
@@ -38,7 +37,7 @@ class Estacao:
     def parte_estacao(self, assinante):
         
         yield self.env.timeout(assinante.horario_chegada)
-        print(assinante.nome, "Chegou na estação em", self.env.now)
+        print(assinante.nome, "Chegou na estação ",self.station_id," em", self.env.now)
         
         # chuva
         yield self.chuva_event
@@ -46,7 +45,10 @@ class Estacao:
         with self.bicicletas.request() as bicicleta:
           available_resources = self.bicicletas.capacity - self.bicicletas.count
           yield bicicleta
-          print(assinante.nome, "partiu com a bicicleta em ", self.env.now," que durou ", assinante.tempo_pedalada, "|", available_resources, 'bicicletas disponíveis')
+          print(assinante.nome, "partiu com a bicicleta em ", 
+                self.env.now," que durou ", assinante.tempo_pedalada, 
+                "|", available_resources, 'bicicletas disponíveis')
+          
           yield self.env.timeout(assinante.tempo_pedalada)
           self.env.process(self.chega_estacao(assinante))
         
@@ -75,16 +77,16 @@ class Estacao:
           available_resources = self.bicicletarios.capacity - self.bicicletarios.count
           yield bicicletario
           print(assinante.nome, "colocou a bicicleta no bicicletario em ", self.env.now, "|", available_resources, 'bicicletarios disponíveis')
-          yield self.env.timeout(100000)
+          #yield self.env.timeout(100000)
         
     
 
 
 class World:
     
-    def __init__(self, info_estacao, info_mes, info_dia_semana, info_horario, risk_of_rain, rain_time, func_tempo_pedalada):
+    def __init__(self, env, info_estacao, info_mes, info_dia_semana, info_horario, risk_of_rain, rain_time, func_tempo_pedalada):
         
-        self.env = simpy.Environment()
+        self.env = env
         
         self.id_estacao = info_estacao['id']
         self.bicicletas = info_estacao['bicicletas'] #Indica a quantidade de bicicletas naquela estação
@@ -110,16 +112,20 @@ class World:
         for h in self.horario:
             for i in range(int(self.assinantes_maximo*self.assinantes_dia*self.assinantes_horario[self.horario.index(h)])):
                 self.assinantes.append(Assinante(self.env,
-                                                'Assinante '+ str(i),
+                                                'Assinante '+ str((i+1)*(self.horario.index(h)+1)),
                                                 self.get_random_usertype(),
-                                                h + random.randint(0,59)/10,
+                                                h + random.randint(0,59)/100,
                                                 func_tempo_pedalada(self.get_random_usertype())))
             
+        
         self.bicicletarios = simpy.Resource(self.env, capacity = self.bicicletas)
         self.bicicletas = simpy.Resource(self.env, capacity = self.bicicletas)
         self.rain_event = simpy.Resource(self.env, capacity = 1)
         
         self.estacao = Estacao(self.env, self.id_estacao, self.bicicletas, self.bicicletarios, self.rain_event, self.rain, rain_time)
+        
+        for i in range(len(self.assinantes)):
+            self.env.process(self.estacao.parte_estacao(self.assinantes[i]))
 
     def get_random_usertype(self):
         
@@ -133,10 +139,8 @@ class World:
 
     
     def run(self):
-        
         for i in range(len(self.assinantes)):
             self.env.process(self.estacao.parte_estacao(self.assinantes[i]))
-        
         
         self.env.run()
 
