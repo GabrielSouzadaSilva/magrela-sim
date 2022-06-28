@@ -107,11 +107,12 @@ class DataParser:
         
         return perc
     
-    def get_perc_hour(self, from_station_id:str, hour:int):
+    def get_perc_hour(self, from_station_id:str, hours:list):
+        perc = []
         
-        tmp = self.station_trip[from_station_id]['starttime'].dt.strftime("%H").value_counts()
-        
-        perc = (tmp[hour]+random.randint(0, int(tmp.describe()['std'])))/tmp.sum()
+        for i in hours:
+            tmp = self.station_trip[from_station_id]['starttime'].dt.strftime("%H").value_counts()
+            perc.append((tmp[i]+random.randint(0, int(tmp.describe()['std'])))/tmp.sum())
         
         return perc
     

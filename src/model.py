@@ -107,12 +107,13 @@ class World:
 
         self.assinantes = []
         
-        for i in range(int(self.assinantes_maximo*self.assinantes_dia*self.assinantes_horario)):
-            self.assinantes.append(Assinante(self.env,
-                                             'Assinante '+ str(i),
-                                             self.get_random_usertype(),
-                                             self.horario+random.randint(0,59)/10,
-                                             func_tempo_pedalada(self.get_random_usertype())))
+        for h in self.horario:
+            for i in range(int(self.assinantes_maximo*self.assinantes_dia*self.assinantes_horario[self.horario.index(h)])):
+                self.assinantes.append(Assinante(self.env,
+                                                'Assinante '+ str(i),
+                                                self.get_random_usertype(),
+                                                h + random.randint(0,59)/10,
+                                                func_tempo_pedalada(self.get_random_usertype())))
             
         self.bicicletarios = simpy.Resource(self.env, capacity = self.bicicletas)
         self.bicicletas = simpy.Resource(self.env, capacity = self.bicicletas)
