@@ -27,7 +27,7 @@ if __name__== "__main__":
         month_rain_risk = data_parser_init.get_risk_of_rain(month)
         
         info_estacao = {'id':data_parser_init.get_station_id(stations), 
-                        'bicicletas':data_parser_init.get_bikes_qt(stations),
+                        'bicicletas':data_parser_init.get_bikes_qt(stations), 
                         'tempo_espera':data_parser_init.get_wait_time(stations)}
             
         info_mes = {'nome_mes':data_parser_init.get_month_name(month), 'qt_maxima':data_parser_init.get_month_users(stations, month)} 

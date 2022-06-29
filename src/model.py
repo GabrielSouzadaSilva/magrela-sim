@@ -1,5 +1,6 @@
 import simpy
 import random, time
+from src.plot import plot
 
 random.seed(time.time())
 
@@ -37,7 +38,8 @@ class Estacao:
     def parte_estacao(self, assinante):
         
         yield self.env.timeout(assinante.horario_chegada)
-        print(assinante.nome, "Chegou na estação ",self.station_id," em", self.env.now)
+        chegada = self.env.now
+        print(assinante.nome, "Chegou na estação ",self.station_id," em", chegada)
         
         # chuva
         yield self.chuva_event
@@ -45,9 +47,13 @@ class Estacao:
         with self.bicicletas.request() as bicicleta:
           available_resources = self.bicicletas.capacity - self.bicicletas.count
           yield bicicleta
+          
+          saida = self.env.now
           print(assinante.nome, "partiu com a bicicleta em ", 
                 self.env.now," que durou ", assinante.tempo_pedalada, 
                 "|", available_resources, 'bicicletas disponíveis')
+          
+          espera = saida - chegada
           
           yield self.env.timeout(assinante.tempo_pedalada)
           self.env.process(self.chega_estacao(assinante))
